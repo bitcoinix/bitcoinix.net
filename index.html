@@ -3,133 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>bitcoinix</title>
-  <link rel="icon" type="image/png" href="logo.png">
-  <meta name="description" content="bitcoinix – this site is under construction.">
-  <style>
-    :root {
-      color-scheme: light dark;
-      --bg: #ffffff;
-      --fg: #1a1a1a;
-      --muted: #666666;
-      --accent: #f7931a;
-      --surface: #fafafa;
-      --border: #e5e5e5;
-      --link-hover: #fff7eb;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #121212;
-        --fg: #eeeeee;
-        --muted: #aaaaaa;
-        --surface: #1a1a1a;
-        --border: #333333;
-        --link-hover: #2a2116;
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; script-src 'self'; connect-src https://api.github.com; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>bitcoinix – Secure Bitcoin full node on NixOS</title>
+  <meta name="description" content="Community-maintained successor to nix-bitcoin: NixOS modules for secure Bitcoin and Lightning full nodes with Tor, sandboxed services and reproducible builds.">
+  <link rel="canonical" href="https://bitcoinix.net/">
+  <link rel="icon" type="image/png" sizes="512x512" href="logo.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="bitcoinix">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://bitcoinix.net/">
+  <meta property="og:title" content="bitcoinix – Secure Bitcoin full node on NixOS">
+  <meta property="og:description" content="Community-maintained successor to nix-bitcoin: NixOS modules for secure Bitcoin and Lightning full nodes with Tor, sandboxed services and reproducible builds.">
+  <meta property="og:image" content="https://bitcoinix.net/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="bitcoinix logo – Secure Bitcoin &amp; Lightning nodes on NixOS">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@bitcoinix_net">
+
+  <!-- Structured data. JSON-LD is a data block, not a script, so the CSP does not apply to it. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://bitcoinix.net/#website",
+        "name": "bitcoinix",
+        "url": "https://bitcoinix.net/",
+        "publisher": { "@id": "https://bitcoinix.net/#organization" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://bitcoinix.net/#organization",
+        "name": "bitcoinix",
+        "url": "https://bitcoinix.net/",
+        "logo": "https://bitcoinix.net/logo.png",
+        "sameAs": [
+          "https://github.com/bitcoinix",
+          "https://x.com/bitcoinix_net"
+        ]
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "name": "bitcoinix",
+        "description": "Nix packages and NixOS modules for easily installing full-featured Bitcoin nodes with an emphasis on security.",
+        "url": "https://bitcoinix.net/",
+        "codeRepository": "https://github.com/bitcoinix/bitcoinix",
+        "programmingLanguage": "Nix",
+        "runtimePlatform": "NixOS",
+        "license": "https://spdx.org/licenses/MIT.html",
+        "isBasedOn": "https://github.com/fort-nix/nix-bitcoin",
+        "author": { "@id": "https://bitcoinix.net/#organization" }
       }
-    }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg);
-      color: var(--fg);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.5;
-    }
-    main {
-      max-width: 36rem;
-      padding: 1rem;
-      text-align: center;
-    }
-    .logo {
-      width: 100%;
-      max-width: 24rem;
-      height: auto;
-      margin-bottom: 2rem;
-    }
-    .links {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.75rem;
-      list-style: none;
-      padding: 0;
-      margin: 4rem 0 0;
-    }
-    .link-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1.25rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      background: var(--surface);
-      color: var(--fg);
-      text-decoration: none;
-      transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
-    }
-    .link-icon {
-      width: 1.75rem;
-      height: 1.75rem;
-      flex-shrink: 0;
-      fill: currentColor;
-    }
-    .link-label {
-      display: block;
-      font-size: 0.9375rem;
-      font-weight: 600;
-    }
-    .link-description {
-      display: block;
-      margin-top: 0.25rem;
-      color: var(--muted);
-      font-size: 0.8125rem;
-    }
-    .link-card:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 4px;
-      border-color: var(--accent);
-      background: var(--link-hover);
-    }
-    .link-card:focus-visible .link-icon {
-      color: var(--accent);
-    }
-    @media (hover: hover) {
-      .link-card:hover {
-        border-color: var(--accent);
-        background: var(--link-hover);
-        transform: translateY(-3px);
-      }
-      .link-card:hover .link-icon {
-        color: var(--accent);
-      }
-    }
-    @media (max-width: 34rem) {
-      .links {
-        grid-template-columns: 1fr;
-      }
-      .link-card {
-        flex-direction: row;
-        gap: 1rem;
-        padding: 1rem 1.25rem;
-        text-align: left;
-      }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .link-card,
-      .link-card:hover {
-        transition: none;
-        transform: none;
-      }
-    }
-  </style>
+    ]
+  }
+  </script>
 </head>
 <body>
   <main>
-    <img class="logo" src="logo-text.png" alt="bitcoinix" width="1140" height="288">
+    <h1><img class="logo" src="logo-text.png" alt="bitcoinix" width="1140" height="288"></h1>
     <p>a collection of Nix packages and NixOS modules for easily installing full&#8209;featured Bitcoin nodes with an emphasis on security</p>
+    <p class="lede">Community-maintained successor to <a href="https://github.com/fort-nix/nix-bitcoin">nix&#8209;bitcoin</a></p>
     <nav aria-label="bitcoinix resources">
       <ul class="links" role="list">
         <!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc. -->
@@ -168,6 +107,26 @@
         </li>
       </ul>
     </nav>
+    <section class="features" aria-labelledby="security-heading">
+      <h2 id="security-heading">Secure by default</h2>
+      <ul>
+        <li><strong>Tor:</strong> with the secure-node preset, services connect out via Tor and accept inbound connections as onion services.</li>
+        <li><strong>Least privilege:</strong> each service runs as its own user, confined by systemd sandboxing, network namespaces and seccomp.</li>
+        <li><strong>Integrity:</strong> exactly pinned Nix dependencies, optional builds from source and signed release tags.</li>
+        <li><strong>Defense in depth:</strong> an optional kernel and system hardening preset.</li>
+      </ul>
+      <h2>Services</h2>
+      <p>Bitcoin Core, Core Lightning, LND, BTCPay Server, electrs, Fulcrum, mempool, Ride The Lightning and more.</p>
+    </section>
+    <footer>
+      <ul role="list">
+        <li><a id="latest-release" href="https://github.com/bitcoinix/bitcoinix/releases/latest">Latest release</a></li>
+        <li><a href="https://docs.bitcoinix.net/release-notes.html">Release notes</a></li>
+        <li><a href="https://github.com/bitcoinix/bitcoinix/blob/master/SECURITY.md">Security policy</a></li>
+        <li><a href="https://github.com/bitcoinix/bitcoinix/blob/master/LICENSE">MIT License</a></li>
+      </ul>
+    </footer>
   </main>
+  <script src="release.js" defer></script>
 </body>
 </html>
