@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; script-src 'self'; connect-src https://api.github.com; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>bitcoinix – Secure Bitcoin full node on NixOS</title>
   <meta name="description" content="Community-maintained successor to nix-bitcoin: NixOS modules for secure Bitcoin and Lightning full nodes with Tor, sandboxed services and reproducible builds.">
@@ -118,6 +118,15 @@
       <h2>Services</h2>
       <p>Bitcoin Core, Core Lightning, LND, BTCPay Server, electrs, Fulcrum, mempool, Ride The Lightning and more.</p>
     </section>
+    <footer>
+      <ul role="list">
+        <li><a id="latest-release" href="https://github.com/bitcoinix/bitcoinix/releases/latest">Latest release</a></li>
+        <li><a href="https://docs.bitcoinix.net/release-notes.html">Release notes</a></li>
+        <li><a href="https://github.com/bitcoinix/bitcoinix/blob/master/SECURITY.md">Security policy</a></li>
+        <li><a href="https://github.com/bitcoinix/bitcoinix/blob/master/LICENSE">MIT License</a></li>
+      </ul>
+    </footer>
   </main>
+  <script src="release.js" defer></script>
 </body>
 </html>

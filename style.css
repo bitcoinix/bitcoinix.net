@@ -153,3 +153,17 @@ a:not(.link-card):focus-visible {
 .features p {
   margin: 0;
 }
+footer {
+  margin-top: 3rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+footer ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
