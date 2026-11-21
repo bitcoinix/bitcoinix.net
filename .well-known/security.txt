@@ -1,0 +1,8 @@
+# Security contact for bitcoinix and bitcoinix.net (RFC 9116).
+# Please report vulnerabilities privately; do not open public issues.
+Contact: https://github.com/bitcoinix/bitcoinix/security/advisories/new
+Expires: 2027-11-01T00:00:00.000Z
+Policy: https://github.com/bitcoinix/bitcoinix/blob/master/SECURITY.md
+Acknowledgments: https://github.com/bitcoinix/bitcoinix/blob/master/SECURITY.md#wall-of-fame
+Preferred-Languages: en
+Canonical: https://bitcoinix.net/.well-known/security.txt
