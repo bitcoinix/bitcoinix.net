@@ -1,0 +1,120 @@
+name: bitcoinix.net
+
+# Job `check` runs the flake checks (see flake.nix) and builds the site. On a
+# push to main, it uploads the site it checked, and job `deploy` publishes it to
+# GitHub Pages. So nothing is published unless all checks pass.
+#
+# The weekly run catches what changes without a commit: it checks whether
+# security.txt expires soon (also checked by job `check`) and, in job
+# `link-check`, the external links.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Runs that deploy share one group and run one at a time, so an older revision
+# can't be deployed after a newer one. PRs have their own groups so that newer
+# revisions cancel obsolete runs. Keep in sync with the `if` of `deploy`.
+concurrency:
+  group: >-
+    ${{ (github.event_name == 'push'
+         || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
+        && 'site-deploy' || format('site-{0}', github.event.pull_request.number || github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.build.outputs.files }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - name: Run the flake checks
+        run: nix flake check --all-systems -L
+      - name: Check the security.txt expiry
+        run: nix run .#security-txt-expiry
+      - name: Build the site
+        id: build
+        # An explicit `shell: bash` runs with `-eo pipefail`, the default only has `-e`
+        shell: bash
+        run: |
+          site=$(nix build --print-out-paths .#default)
+          echo "path=$site" >> "$GITHUB_OUTPUT"
+          # The checksum of each published file, for the check after deployment
+          {
+            echo "files<<EOF"
+            (cd "$site" && find . -type f -printf '%P\n' | sort | xargs sha256sum)
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - if: >-
+          github.event_name == 'push'
+          || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ steps.build.outputs.path }}
+          # Publishes .well-known/
+          include-hidden-files: true
+
+  deploy:
+    needs: check
+    # Keep in sync with `concurrency` and the upload step of `check`
+    if: >-
+      github.event_name == 'push'
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Check that the site serves the checked files
+        shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          FILES: ${{ needs.check.outputs.files }}
+        run: |
+          # The Pages CDN can serve the previous version for a while (max-age 600)
+          for attempt in {1..21}; do
+              stale=0
+              while read -r sum path; do
+                  got=$(curl -fsSL --proto '=https' -H 'Cache-Control: no-cache' "${PAGE_URL%/}/$path" \
+                      | sha256sum | cut -d' ' -f1) || true
+                  if [[ $got != "$sum" ]]; then
+                      echo "$path: not served yet"
+                      stale=1
+                  fi
+              done <<< "$FILES"
+              if [[ $stale == 0 ]]; then
+                  echo "All $(wc -l <<< "$FILES") files are served"
+                  exit 0
+              fi
+              [[ $attempt == 21 ]] || sleep 30
+          done
+          echo "::error::$PAGE_URL doesn't serve the files that were checked"
+          exit 1
+
+  link-check:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+      - name: Check the external links
+        run: nix run .#link-check
