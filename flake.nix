@@ -16,20 +16,22 @@
 
       forAllSystems = f: lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
 
-      # The files that are published. Everything else in this repository
-      # (README, LICENSE, CI config, CNAME, ...) stays unpublished.
-      siteFiles = lib.fileset.unions [
-        ./index.html
-        ./style.css
-        ./release.js
-        ./logo.png
-        ./logo-text.png
-        ./apple-touch-icon.png
-        ./og-image.png
-        ./robots.txt
-        ./sitemap.xml
-        ./.well-known/security.txt
-      ];
+      # Everything in the repository is published, except these files. A new
+      # file for the site needs no change here; a new file that must not be
+      # published needs to be added.
+      siteFiles = lib.fileset.difference ./. (
+        lib.fileset.unions [
+          ./.github
+          ./.nojekyll
+          ./CNAME
+          ./LICENSE
+          ./README.md
+          ./SECURITY.md
+          ./ci
+          ./flake.lock
+          ./flake.nix
+        ]
+      );
     in
     {
       packages = forAllSystems (pkgs: {
@@ -66,9 +68,16 @@
               ${site}/index.html ${site}/style.css
           '';
 
-          # References, Content Security Policy, JSON-LD, XML and security.txt
-          site = check "site" [ pkgs.python3 ] ''
-            python3 -I ${./ci/check-site.py} ${site}
+          # Links and resources on the site itself point to published files
+          # and existing fragments. Offline: https://bitcoinix.net/ is mapped
+          # to the built site, and external links are skipped (see
+          # apps.link-check). lychee needs CA certificates even offline.
+          links = check "links" [ pkgs.lychee pkgs.cacert ] ''
+            lychee --offline --no-progress --include-fragments \
+              --index-files index.html \
+              --remap '^https://bitcoinix\.net/(.*)$ file://${site}/$1' \
+              ${site}/index.html ${site}/style.css ${site}/robots.txt \
+              ${site}/sitemap.xml ${site}/.well-known/security.txt
           '';
 
           javascript = check "javascript" [ pkgs.nodejs ] ''
@@ -102,7 +111,7 @@
 
           # Checks the external links. Network-dependent and therefore run on
           # a schedule, not on pull requests. Links to bitcoinix.net itself
-          # are checked offline by `checks.site`. x.com refuses automated
+          # are checked offline by `checks.links`. x.com refuses automated
           # requests.
           link-check = app "link-check" "Check the external links of the site" [ pkgs.lychee ] ''
             lychee --no-progress --max-retries 3 \

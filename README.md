@@ -14,6 +14,7 @@ latest release number.
 | `og-image.png` | Social media preview image (1200×630) |
 | `robots.txt`, `sitemap.xml` | Search engine hints |
 | `.well-known/security.txt` | Security contact ([RFC 9116](https://www.rfc-editor.org/rfc/rfc9116)). **Update `Expires` before it passes.** |
+| `.nojekyll` | Turns off Jekyll, so `.well-known/` is published. Only needed while Pages deploys from the branch |
 | `flake.nix`, `ci/` | The checks, see below |
 
 The Content Security Policy is set in a `<meta>` tag in `index.html`.
@@ -30,15 +31,16 @@ nix flake check
 They check the site as it is published (`nix build` builds it into `result/`):
 
 - `html`: HTML and CSS validity, with the [Nu Html Checker](https://validator.github.io/validator/)
-- `site`: that every link to the site and every resource points to a
-  published file, that the Content Security Policy allows everything the page
-  loads, and that JSON-LD, `sitemap.xml`, `robots.txt` and `security.txt` are
-  valid
+- `links`: that links and resources on the site point to published files,
+  with [lychee](https://lychee.cli.rs/), offline
 - `javascript`: JavaScript syntax
 
-Only the files listed in `siteFiles` in `flake.nix` are published. **Add a new
-file there**, or the `site` check fails because the page refers to a file that
-isn't published.
+The checks don't cover the Content Security Policy. After changing the page,
+open it in a browser and look for blocked resources in the console.
+
+Everything in the repository is published except the files excluded by
+`siteFiles` in `flake.nix` (this README, the checks, `CNAME`, ...). **Add a
+new file that must not be published there.**
 
 Two checks depend on the current date or on other sites, so they run as apps,
 weekly in CI:
