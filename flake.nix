@@ -113,11 +113,25 @@
           # a schedule, not on pull requests. Links to bitcoinix.net itself
           # are checked offline by `checks.links`. x.com refuses automated
           # requests.
+          #
+          # lychee 0.24.2 retries only 429 responses, not 5xx, despite
+          # `--max-retries` (fixed by lycheeverse/lychee#2324, not yet
+          # released). So a run that finds broken links (exit code 2) is
+          # repeated, to ride out transient errors such as GitHub's
+          # occasional 503.
           link-check = app "link-check" "Check the external links of the site" [ pkgs.lychee ] ''
-            lychee --no-progress --max-retries 3 \
-              --exclude '^https://bitcoinix\.net/' \
-              --exclude '^https://x\.com/' \
-              ${site}/index.html ${site}/.well-known/security.txt
+            for attempt in 1 2 3; do
+                status=0
+                lychee --no-progress --max-retries 3 \
+                  --exclude '^https://bitcoinix\.net/' \
+                  --exclude '^https://x\.com/' \
+                  ${site}/index.html ${site}/.well-known/security.txt || status=$?
+                if [[ $status != 2 || $attempt == 3 ]]; then
+                    exit "$status"
+                fi
+                echo "Attempt $attempt found broken links, retrying in 2 minutes"
+                sleep 120
+            done
           '';
         }
       );
