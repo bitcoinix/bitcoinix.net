@@ -85,6 +85,18 @@
               node --check "$f"
             done
           '';
+
+          # TODO: fails once nixpkgs has a lychee release newer than 0.24.2,
+          # which should retry 5xx responses (lycheeverse/lychee#2324). Then
+          # replace the loop in apps.link-check with a single lychee call
+          # with `--retry-wait-time 30` (waits 30, 60 and 120 seconds), check
+          # that it retries a 503, and remove this check.
+          lychee-retries = check "lychee-retries" [ ] (
+            lib.optionalString (lib.versionOlder "0.24.2" pkgs.lychee.version) ''
+              echo "lychee ${pkgs.lychee.version} should retry 5xx responses: simplify apps.link-check (see the TODO in flake.nix)" >&2
+              exit 1
+            ''
+          );
         }
       );
 
@@ -113,11 +125,25 @@
           # a schedule, not on pull requests. Links to bitcoinix.net itself
           # are checked offline by `checks.links`. x.com refuses automated
           # requests.
+          #
+          # lychee 0.24.2 retries only 429 responses, not 5xx, despite
+          # `--max-retries` (fixed by lycheeverse/lychee#2324, not yet
+          # released). So a run that finds broken links (exit code 2) is
+          # repeated, to ride out transient errors such as GitHub's
+          # occasional 503. See the TODO at checks.lychee-retries.
           link-check = app "link-check" "Check the external links of the site" [ pkgs.lychee ] ''
-            lychee --no-progress --max-retries 3 \
-              --exclude '^https://bitcoinix\.net/' \
-              --exclude '^https://x\.com/' \
-              ${site}/index.html ${site}/.well-known/security.txt
+            for attempt in 1 2 3; do
+                status=0
+                lychee --no-progress --max-retries 3 \
+                  --exclude '^https://bitcoinix\.net/' \
+                  --exclude '^https://x\.com/' \
+                  ${site}/index.html ${site}/.well-known/security.txt || status=$?
+                if [[ $status != 2 || $attempt == 3 ]]; then
+                    exit "$status"
+                fi
+                echo "Attempt $attempt found broken links, retrying in 2 minutes"
+                sleep 120
+            done
           '';
         }
       );
