@@ -85,6 +85,18 @@
               node --check "$f"
             done
           '';
+
+          # TODO: fails once nixpkgs has a lychee release newer than 0.24.2,
+          # which should retry 5xx responses (lycheeverse/lychee#2324). Then
+          # replace the loop in apps.link-check with a single lychee call
+          # with `--retry-wait-time 30` (waits 30, 60 and 120 seconds), check
+          # that it retries a 503, and remove this check.
+          lychee-retries = check "lychee-retries" [ ] (
+            lib.optionalString (lib.versionOlder "0.24.2" pkgs.lychee.version) ''
+              echo "lychee ${pkgs.lychee.version} should retry 5xx responses: simplify apps.link-check (see the TODO in flake.nix)" >&2
+              exit 1
+            ''
+          );
         }
       );
 
@@ -118,7 +130,7 @@
           # `--max-retries` (fixed by lycheeverse/lychee#2324, not yet
           # released). So a run that finds broken links (exit code 2) is
           # repeated, to ride out transient errors such as GitHub's
-          # occasional 503.
+          # occasional 503. See the TODO at checks.lychee-retries.
           link-check = app "link-check" "Check the external links of the site" [ pkgs.lychee ] ''
             for attempt in 1 2 3; do
                 status=0
